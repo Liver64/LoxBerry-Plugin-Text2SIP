@@ -38,13 +38,13 @@ Behavior:
   - With --force:     FULL uninstall (remove everything)
 
 Logfile:
-  /opt/loxberry/log/plugins/text2sip/client_install.log
+  REPLACELBHOMEDIR/log/plugins/text2sip/client_install.log
 USAGE
     exit 0;
 }
 
 # ========= Logging =========
-my $logfile = '/opt/loxberry/log/plugins/text2sip/client_install.log';
+my $logfile = 'REPLACELBHOMEDIR/log/plugins/text2sip/client_install.log';
 open(my $logfh, '>>', $logfile) or die "Cannot open log file $logfile: $!";
 
 sub log_msg {
@@ -68,7 +68,7 @@ my $cert_folder      = '/etc/mosquitto/certs/sip-bridge';
 my $ca_file          = '/etc/mosquitto/ca/mosq-ca.crt';
 my $role_bridge      = '/etc/mosquitto/role/sip-bridge';
 my $role_t2s_master  = '/etc/mosquitto/role/t2s-master';
-my $mqtt_handler     = '/opt/loxberry/sbin/mqtt-handler.pl';
+my $mqtt_handler     = 'REPLACELBHOMEDIR/sbin/mqtt-handler.pl';
 my $hosts_file       = '/etc/hosts';
 
 # ========= Role detection =========

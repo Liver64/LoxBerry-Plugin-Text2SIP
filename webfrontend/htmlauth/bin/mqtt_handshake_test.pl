@@ -37,7 +37,7 @@ my $TIMEOUT_SEC = 10;
 
 # ---------- Log- und Health-Dateien ----------
 my $ramdir      = '/run/shm/text2sip';
-my $stdlogdir   = '/opt/loxberry/log/plugins/text2sip';
+my $stdlogdir   = 'REPLACELBHOMEDIR/log/plugins/text2sip';
 my $LOGFILE     = "$ramdir/handshake_test.log";
 my $healthfile  = "$ramdir/health.json";
 my $ROLE_MARKER = '/etc/mosquitto/role/sip-bridge';
