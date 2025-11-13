@@ -461,11 +461,44 @@ elsif ($do eq "get_t2s_status")
                 require File::Slurp;
                 require Time::Piece;
 
-                my $data = JSON::decode_json(File::Slurp::read_file($healthfile));
+                my $rawfile = File::Slurp::read_file($healthfile);
+                my $data    = JSON::decode_json($rawfile);
+
                 if ($data->{last_handshake}) {
-                    $result{last} = $data->{last_handshake};
-                    my $t = Time::Piece->strptime($data->{last_handshake}, '%Y-%m-%d %H:%M:%S');
-                    $result{age} = time - $t->epoch;
+
+                    my $raw = $data->{last_handshake};
+                    my $tp;
+
+                    # ---------------------------------------------------
+                    # 1. ISO 8601 Versuch: 2025-11-13T11:45:02+01:00
+                    # ---------------------------------------------------
+                    eval {
+                        $tp = Time::Piece->strptime($raw, '%Y-%m-%dT%H:%M:%S');
+                    };
+
+                    # ---------------------------------------------------
+                    # 2. Classic Format: 2025-11-13 11:45:02
+                    # ---------------------------------------------------
+                    if (!$tp) {
+                        eval {
+                            $tp = Time::Piece->strptime($raw, '%Y-%m-%d %H:%M:%S');
+                        };
+                    }
+
+                    # ---------------------------------------------------
+                    # 3. Format für UI
+                    # ---------------------------------------------------
+                    if ($tp) {
+                        # [YYYY-MM-DD] HH:MM:SS
+                        my $pretty = sprintf(
+                            '[%04d-%02d-%02d] %02d:%02d:%02d',
+                            $tp->year, $tp->mon, $tp->mday,
+                            $tp->hour, $tp->min, $tp->sec
+                        );
+
+                        $result{last} = $pretty;
+                        $result{age}  = time - $tp->epoch;
+                    }
                 }
             };
         }
@@ -475,7 +508,6 @@ elsif ($do eq "get_t2s_status")
     print JSON::encode_json(\%result);
     exit;
 }
-
 
   
   #--------------- Check config -----------------

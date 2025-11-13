@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # mqtt_handshake_test.pl — Simple MQTT Handshake Test for T2S Master
 # Author: LoxBerry Text2SIP Plugin
-# Version: 1.3 (RAM logging in /run/shm/text2sip)
+# Version: 1.4 (adds hostname + corr + ISO timestamp to health.json)
 # -------------------------------------------------------------------
 # - Publishes to: tts-handshake/request/<client>
 # - Expects reply: tts-handshake/response/<client>
@@ -22,8 +22,12 @@ use JSON qw(encode_json decode_json);
 use Sys::Hostname qw(hostname);
 use POSIX qw(strftime);
 use Getopt::Long qw(GetOptions);
-use Time::HiRes qw(time);
+use Time::HiRes qw(time sleep);
 use File::Path qw(make_path);
+
+# --- Optional random delay to desynchronize multiple Bridges ---
+my $rand_delay = rand(9.5) + 0.5;
+sleep($rand_delay);
 
 # ---------- Options ----------
 my $quiet = 0;
@@ -111,49 +115,40 @@ $mqtt->subscribe($RESP_TOPIC, sub {
     };
 });
 
-# Publish handshake (ensures no cached retain)
-eval {
-    # Clear old retained message first (harmless if none)
-    $mqtt->publish($REQ_TOPIC, "");
-
-    # Add small random jitter to avoid identical payloads being cached
-    my $json = encode_json({
-        client    => $CLIENT_ID,
-        timestamp => time,
-        hostname  => hostname(),
-        corr      => $corr,
-        nonce     => int(rand(1000000))  # <- prevents payload caching
-    });
-
-    # Now send actual handshake
-    $mqtt->publish($REQ_TOPIC, $json);
-};
-
-
+# Publish request
+eval { $mqtt->publish($REQ_TOPIC, $payload); };
 if ($@) {
     log_msg("<ERROR>", "Publish failed: $@");
     exit 1;
 }
 
 log_msg("<INFO>", "Sent handshake request to $REQ_TOPIC (corr=$corr) via $server");
+
 my $start = time;
 while (time - $start < $TIMEOUT_SEC) {
     $mqtt->tick(0.2);
     last if $response;
 }
+
 if ($response) {
     my $srv = $response->{server} // 'unknown';
     my $tsr = $response->{timestamp} // '';
     log_msg("<OK>", "Received handshake response from $srv at $tsr (corr=$corr)");
 
     # ---------- Health-File aktualisieren ----------
-    my $timestamp  = strftime "%Y-%m-%d %H:%M:%S", localtime;
+    my $iso = strftime "%Y-%m-%dT%H:%M:%S%z", localtime;
+    $iso =~ s/(\d{2})$/:$1/;  # make +0100 → +01:00
+
+    my %health = (
+        last_handshake => $iso,
+        corr           => $corr,
+        hostname       => hostname(),
+    );
 
     eval {
         require JSON;
         require File::Slurp;
 
-        my %health = ( last_handshake => $timestamp );
         File::Slurp::write_file($healthfile, JSON::encode_json(\%health));
 
         chown scalar(getpwnam('loxberry')), scalar(getgrnam('loxberry')), $healthfile;
@@ -163,6 +158,7 @@ if ($response) {
     };
 
     exit 0;
+
 } else {
     log_msg("<ERROR>", "No handshake response within $TIMEOUT_SEC seconds (corr=$corr).");
     exit 1;
