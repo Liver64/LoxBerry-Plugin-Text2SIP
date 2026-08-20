@@ -3,10 +3,10 @@
 				  <div id="dialog"></div>
                   <script type="text/javascript" src="/plugins/<!--$psubfolder-->/jquery-ui-1.9.2.custom.min.js"></script>
                   <script type="text/javascript" src="/plugins/<!--$psubfolder-->/countrySelect.min.js"></script>
-                  <link   type="text/css" rel="stylesheet" href="/plugins/<!--$psubfolder-->/style.css?v=20260810-v25">
+                  <link   type="text/css" rel="stylesheet" href="/plugins/<!--$psubfolder-->/style.css?v=20260820-stage15e-isolation">
                   <link   type="text/css" rel="stylesheet" href="/plugins/<!--$psubfolder-->/countrySelect.min.css">
                   <center>
-                    <form autocomplete="off" method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi">
+                    <form autocomplete="off" method="post" data-ajax="false" name="main_form" id="main_form" class="t2sip-theme-isolated" action="./index.cgi">
                     <div class="t2s-topbar">
                       <!-- Plugin-Info bewusst als eigener Block ueber den Einstellungen -->
                       <div class="t2sip-hero">
@@ -467,6 +467,7 @@
                         .dialog(
                         {
                           modal: true, title: title, zIndex: 10000, autoOpen: true,
+                          dialogClass: 't2sip-dialog',
                           width: 'auto', resizable: false,
                           buttons:
                           {
@@ -493,6 +494,7 @@
                         .dialog(
                         {
                           modal: true, title: title, zIndex: 10000, autoOpen: true,
+                          dialogClass: 't2sip-dialog',
                           resizable: true,
                           width: 'auto',
                           height: 'auto',
@@ -534,6 +536,7 @@
 						  title: title,
 						  zIndex: 10000,
 						  autoOpen: true,
+						  dialogClass: 't2sip-dialog',
 						  width: 'auto',
 						  resizable: false,
 						  buttons: {
@@ -603,7 +606,7 @@
 						.prop('id','dialog')
 						.dialog({
 						  modal: true, title: title, zIndex: 10000, autoOpen: true, resizable: true,
-						  dialogClass: 'fixedDialog',
+						  dialogClass: 'fixedDialog t2sip-dialog',
 						  width: 'auto', height: 'auto', minWidth: '410', minHeight: '230',
 						  buttons: {
 							'<!--$TXT_BTN_SAVE_CFG_DIALOG_CLOSE-->': function () {
@@ -662,7 +665,7 @@
                                     zIndex: 10000,
                                     autoOpen: true,
                                     resizable: false,
-                                    dialogClass: 'fixedDialog',
+                                    dialogClass: 'fixedDialog t2sip-dialog',
                                     width: 'auto',
                                     height: 'auto',
                                     minWidth: 430,

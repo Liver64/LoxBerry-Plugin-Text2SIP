@@ -698,3 +698,372 @@
   opacity: 0.8;
 }
 
+/* ==========================================================================
+ * Stage15e: Text2SIP theme isolation
+ * --------------------------------------------------------------------------
+ * LoxBerry still owns the surrounding header/navigation. The complete plugin
+ * form and Text2SIP's jQuery-UI dialogs use this fixed, light plugin palette.
+ * Duplicate #main_form deliberately raises specificity above generated user
+ * theme rules without changing anything outside the plugin scope.
+ * ========================================================================== */
+html body #main_form#main_form.t2sip-theme-isolated {
+  --t2sip-surface: #f4f5f6;
+  --t2sip-control-bg: #ffffff;
+  --t2sip-control-disabled-bg: #f2f3f5;
+  --t2sip-text: #20242a;
+  --t2sip-muted: #626a75;
+  --t2sip-disabled-text: #737b86;
+  --t2sip-border: #7e7e7e;
+  --t2sip-control-border: #b6b6b6;
+  --t2sip-primary: #6dac20;
+  --t2sip-primary-hover: #5d9f1b;
+  --t2sip-primary-text: #ffffff;
+  --t2sip-danger: #c00000;
+  --t2sip-focus: rgba(109, 172, 32, 0.28);
+
+  color-scheme: light !important;
+  isolation: isolate;
+  background: var(--t2sip-surface) !important;
+  background-color: var(--t2sip-surface) !important;
+  background-image: none !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  text-shadow: none !important;
+  accent-color: var(--t2sip-primary);
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(
+  .t2s-topbar,
+  .t2sip-hero,
+  .t2sip-panel,
+  .t2sip-admin-box,
+  .form-group,
+  fieldset,
+  legend,
+  table,
+  tbody,
+  thead,
+  tfoot,
+  tr,
+  td,
+  th,
+  label,
+  nobr,
+  p,
+  small
+) {
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  font-family: inherit !important;
+  text-shadow: none !important;
+}
+
+/* Theme table/card helpers must not paint surfaces inside the legacy form. */
+html body #main_form#main_form.t2sip-theme-isolated :is(table, tbody, thead, tfoot, tr, td, th, fieldset) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated #formtable {
+  background: rgba(192, 192, 192, 0.2) !important;
+  background-color: rgba(192, 192, 192, 0.2) !important;
+  border: 1px solid var(--t2sip-border) !important;
+  border-radius: 5px !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(.t2sip-hero, .t2sip-panel, .t2sip-admin-box, #formtable) {
+  background-image: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated a:not(.ui-btn) {
+  color: #355f12 !important;
+  -webkit-text-fill-color: #355f12 !important;
+  text-shadow: none !important;
+}
+
+/* Native fields: fixed plugin surface. jQM inner fields are neutralised below. */
+html body #main_form#main_form.t2sip-theme-isolated input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+html body #main_form#main_form.t2sip-theme-isolated textarea,
+html body #main_form#main_form.t2sip-theme-isolated select:not([data-role="slider"]) {
+  background: var(--t2sip-control-bg) !important;
+  background-color: var(--t2sip-control-bg) !important;
+  background-image: none !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  border-color: var(--t2sip-control-border) !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-radius: 0.6em !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-family: inherit !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(input, textarea, select):focus {
+  outline: none !important;
+  border-color: var(--t2sip-primary) !important;
+  box-shadow: 0 0 0 2px var(--t2sip-focus) !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(input, textarea, select):disabled,
+html body #main_form#main_form.t2sip-theme-isolated :is(input, textarea, select)[readonly] {
+  background: var(--t2sip-control-disabled-bg) !important;
+  background-color: var(--t2sip-control-disabled-bg) !important;
+  color: var(--t2sip-disabled-text) !important;
+  -webkit-text-fill-color: var(--t2sip-disabled-text) !important;
+  opacity: 1 !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(input, textarea)::placeholder {
+  color: #9299a2 !important;
+  -webkit-text-fill-color: #9299a2 !important;
+  opacity: 1 !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated select option {
+  background: var(--t2sip-control-bg) !important;
+  background-color: var(--t2sip-control-bg) !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+}
+
+/* jQM v3/v4 input wrappers own the visible frame; avoid double borders. */
+html body #main_form#main_form.t2sip-theme-isolated :is(.ui-input-text, .ui-input-search, .ui-select > .ui-btn) {
+  background: var(--t2sip-control-bg) !important;
+  background-color: var(--t2sip-control-bg) !important;
+  background-image: none !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  border: 1px solid var(--t2sip-control-border) !important;
+  border-radius: 0.6em !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(.ui-input-text, .ui-input-search) > :is(input, textarea) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated .ui-select > .ui-btn :is(.ui-btn-text, span) {
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  text-shadow: none !important;
+}
+
+/* Plugin buttons keep a stable neutral style; Save/Create remain primary. */
+html body #main_form#main_form.t2sip-theme-isolated .ui-btn:not(.ui-select > .ui-btn):not(.ui-flipswitch-on):not(.ui-flipswitch-off):not(.ui-slider-handle):not(.ui-slider-label):not(.ui-btn-active),
+html body #main_form#main_form.t2sip-theme-isolated a[data-role="button"]:not(#btnsavecfg):not(#btnsavecfgbottom):not(#btnscan) {
+  background: #f6f6f6 !important;
+  background-color: #f6f6f6 !important;
+  background-image: none !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  border-color: var(--t2sip-control-border) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated .ui-btn:not(.ui-select > .ui-btn):not(.ui-flipswitch-on):not(.ui-flipswitch-off):not(.ui-slider-handle):not(.ui-slider-label):not(.ui-btn-active):hover,
+html body #main_form#main_form.t2sip-theme-isolated .ui-btn:not(.ui-select > .ui-btn):not(.ui-flipswitch-on):not(.ui-flipswitch-off):not(.ui-slider-handle):not(.ui-slider-label):not(.ui-btn-active):focus {
+  background: #e7e9eb !important;
+  background-color: #e7e9eb !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  border-color: #9299a2 !important;
+  text-shadow: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(#btnsavecfg, #btnsavecfgbottom, #btnscan),
+html body #main_form#main_form.t2sip-theme-isolated .ui-btn.ui-btn-active {
+  background: var(--t2sip-primary) !important;
+  background-color: var(--t2sip-primary) !important;
+  background-image: none !important;
+  color: var(--t2sip-primary-text) !important;
+  -webkit-text-fill-color: var(--t2sip-primary-text) !important;
+  border-color: var(--t2sip-primary) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(#btnsavecfg, #btnsavecfgbottom, #btnscan) :is(.ui-btn-text, span),
+html body #main_form#main_form.t2sip-theme-isolated .ui-btn.ui-btn-active :is(.ui-btn-text, span) {
+  color: var(--t2sip-primary-text) !important;
+  -webkit-text-fill-color: var(--t2sip-primary-text) !important;
+  text-shadow: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(#btnsavecfg, #btnsavecfgbottom, #btnscan):hover,
+html body #main_form#main_form.t2sip-theme-isolated :is(#btnsavecfg, #btnsavecfgbottom, #btnscan):focus {
+  background: var(--t2sip-primary-hover) !important;
+  background-color: var(--t2sip-primary-hover) !important;
+  border-color: var(--t2sip-primary-hover) !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated .ui-btn :is(.ui-btn-text, span) {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+  text-shadow: none !important;
+}
+
+/* Fixed light switches for both jQM generations; geometry stays untouched. */
+html body #main_form#main_form.t2sip-theme-isolated :is(.ui-flipswitch, .ui-slider-switch),
+html body #main_form#main_form.t2sip-theme-isolated :is(.ui-flipswitch-on, .ui-flipswitch-off, .ui-slider-label) {
+  background: var(--t2sip-control-disabled-bg) !important;
+  background-color: var(--t2sip-control-disabled-bg) !important;
+  background-image: none !important;
+  color: var(--t2sip-text) !important;
+  -webkit-text-fill-color: var(--t2sip-text) !important;
+  border-color: #bfc3c8 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(.ui-flipswitch .ui-btn, .ui-slider-switch .ui-slider-handle) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #bfc3c8 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(.ui-disabled, :disabled) {
+  opacity: 0.62 !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(.mqtt-local-hint, .pockettts-status-note) {
+  color: var(--t2sip-muted) !important;
+  -webkit-text-fill-color: var(--t2sip-muted) !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated :is(.mqtt-validation-message, .form-error-message, .test2sip_job_failed) {
+  color: var(--t2sip-danger) !important;
+  -webkit-text-fill-color: var(--t2sip-danger) !important;
+  text-shadow: none !important;
+}
+
+html body #main_form#main_form.t2sip-theme-isolated .test2sip_job_ok {
+  color: #087f23 !important;
+  -webkit-text-fill-color: #087f23 !important;
+  text-shadow: none !important;
+}
+
+/* Dialogs are appended outside #main_form, therefore they use their own class. */
+html body .ui-dialog.t2sip-dialog {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #20242a !important;
+  -webkit-text-fill-color: #20242a !important;
+  border: 1px solid #7e7e7e !important;
+  border-radius: 0.6em !important;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.24) !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html body .ui-dialog.t2sip-dialog :is(.ui-dialog-content, .ui-dialog-buttonpane) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #20242a !important;
+  -webkit-text-fill-color: #20242a !important;
+  border-color: #d2d5d9 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html body .ui-dialog.t2sip-dialog .ui-dialog-titlebar {
+  background: #a0cc6a !important;
+  background-color: #a0cc6a !important;
+  background-image: none !important;
+  color: #20242a !important;
+  -webkit-text-fill-color: #20242a !important;
+  border: 0 !important;
+  border-bottom: 1px solid #7e7e7e !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+html body .ui-dialog.t2sip-dialog .ui-dialog-buttonpane .ui-button {
+  background: #f6f6f6 !important;
+  background-color: #f6f6f6 !important;
+  background-image: none !important;
+  color: #20242a !important;
+  -webkit-text-fill-color: #20242a !important;
+  border: 1px solid #b6b6b6 !important;
+  border-radius: 0.6em !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+html body .ui-dialog.t2sip-dialog .ui-dialog-buttonpane .ui-button:hover,
+html body .ui-dialog.t2sip-dialog .ui-dialog-buttonpane .ui-button:focus {
+  background: #e7e9eb !important;
+  background-color: #e7e9eb !important;
+  border-color: #9299a2 !important;
+}
+
+html body .ui-dialog.t2sip-dialog .ui-dialog-buttonpane .ui-button:first-child {
+  background: #6dac20 !important;
+  background-color: #6dac20 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border-color: #6dac20 !important;
+}
+
+html body .ui-dialog.t2sip-dialog .ui-dialog-buttonpane .ui-button:first-child :is(.ui-button-text, span) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow: none !important;
+}
+
+html body .ui-dialog.t2sip-dialog .ui-dialog-buttonpane .ui-button:first-child:hover,
+html body .ui-dialog.t2sip-dialog .ui-dialog-buttonpane .ui-button:first-child:focus {
+  background: #5d9f1b !important;
+  background-color: #5d9f1b !important;
+  border-color: #5d9f1b !important;
+}

@@ -73,6 +73,7 @@ sub flash_popup {
 
     \$d.html($js_msg).dialog({
       modal: true, title: $js_title, zIndex: 10000, autoOpen: true,
+      dialogClass: 't2sip-dialog',
       resizable: true, width: 'auto', height: 'auto', minWidth: 400, minHeight: 230
     });
 
@@ -171,6 +172,7 @@ sub confirm_popup {
 
     \$d.html($js_msg).dialog({
       modal: true, title: $js_title, zIndex: 10000, autoOpen: true,
+      dialogClass: 't2sip-dialog',
       resizable: true, width: 'auto', height: 'auto', minWidth: 420, minHeight: 230,
       buttons: btns,
       close: function(){ /* noop */ }
