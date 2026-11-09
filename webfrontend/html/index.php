@@ -162,6 +162,13 @@ else if ($_REQUEST["mode"] == "make_call")
     // Optional: TTS-Text (wird sp�ter an index.cgi durchgereicht)
     $tts = isset($_REQUEST["tts"]) ? $_REQUEST["tts"] : '';
 
+    // Loxone sends these exact values on status changes.
+    if ($tts === '0' || $tts === '1') {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "OK\n";
+        exit;
+    }
+
     // Optional: DEBUG_USE aus Request (z.B. f�r Test aus der UI)
     $debug_use = isset($_REQUEST["DEBUG_USE"]) ? $_REQUEST["DEBUG_USE"] : '';
 

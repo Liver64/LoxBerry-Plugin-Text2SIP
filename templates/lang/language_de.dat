@@ -118,3 +118,7 @@ TXT_POCKETTTS_SERVER_RESTARTING="Server wird neu gestartet …"
 TXT_POCKETTTS_SERVER_RESTART_FAILED="Neustart fehlgeschlagen"
 TXT_POCKETTTS_SERVER_CHECKING="Status wird geprüft …"
 TXT_EMPTY_LOG_DIALOG_AUTHENTICATE="Authentifizierung fehlgeschlagen."
+
+TXT_SIP_LOCAL_PORT="Lokaler SIP-Port"
+TXT_SIP_LOCAL_PORT_HELP="Standard: 5060. Bei Portkonflikten z. B. 5062 verwenden. Gilt fuer alle Anrufe; der SIP-Server-Port bleibt unveraendert."
+TXT_SIP_LOCAL_PORT_INVALID="Der lokale SIP-Port muss eine ganze Zahl zwischen 1 und 65535 sein."

@@ -118,3 +118,7 @@ TXT_POCKETTTS_SERVER_RESTARTING="Server wordt herstart …"
 TXT_POCKETTTS_SERVER_RESTART_FAILED="Herstart mislukt"
 TXT_POCKETTTS_SERVER_CHECKING="Status wordt gecontroleerd …"
 TXT_EMPTY_LOG_DIALOG_AUTHENTICATE="Authenticatie mislukt."
+
+TXT_SIP_LOCAL_PORT="Local SIP Port"
+TXT_SIP_LOCAL_PORT_HELP="Default: 5060. Use e.g. 5062 for port conflicts. Applies to all calls; the SIP server port stays unchanged."
+TXT_SIP_LOCAL_PORT_INVALID="Local SIP port must be a whole number between 1 and 65535."

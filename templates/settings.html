@@ -35,6 +35,12 @@
                               </div>
                             </div>
 
+                            <div class="plugin-config-row" id="sip-local-port-row" style="<!--$SIP_LOCAL_PORT_ROW_STYLE-->">
+                              <label class="plugin-config-label" for="SIP_LOCAL_PORT"><!--$TXT_SIP_LOCAL_PORT--></label>
+                              <div class="plugin-config-control">
+                                <input type="number" name="SIP_LOCAL_PORT" id="SIP_LOCAL_PORT" min="1" max="65535" step="1" required value="<!--$SIP_LOCAL_PORT-->" title="<!--$TXT_SIP_LOCAL_PORT_HELP-->">
+                              </div>
+                            </div>
                             <div class="t2s_block">
                               <div class="plugin-config-row field_t2s">
                                 <div class="plugin-config-label"><!--$TXT_LABEL_T2S_USE--></div>
@@ -365,11 +371,12 @@
                       return false;
                     });
 
-					function updateMqttUi() {
+					function updateConnectionUi() {
 					  var pluginOn = ($('#PLUGIN_USE').val() || 'off').toLowerCase() === 'on';
 					  var t2sOn    = ($('#T2S_USE').val() || 'off').toLowerCase() === 'on';
 					  var remote   = ($('#MQTT_MODE').val() || 'local') === 'remote';
 					  var mqttOn   = pluginOn && t2sOn;
+					  document.getElementById('sip-local-port-row').style.setProperty('display', pluginOn ? '' : 'none', 'important');
 					  var $panel   = $('.t2sip-panel-mqtt');
 
 					  // Panel selbst bleibt sichtbar; Überschrift und Inhalt nur bei beiden Schaltern = ON.
@@ -381,7 +388,7 @@
 					  $('.mqtt-local-hint').toggleClass('mqtt-hidden', remote);
 					}
 
-					$(document).on('change', '#PLUGIN_USE, #T2S_USE, #MQTT_MODE', updateMqttUi);
+					$(document).on('change', '#PLUGIN_USE, #T2S_USE, #MQTT_MODE', updateConnectionUi);
 
 					var mqttValidationMessageTimer = null;
 
@@ -449,7 +456,7 @@
 					});
 
 					$(document).ready(function() {
-					  updateMqttUi();
+					  updateConnectionUi();
 					  updateMqttPasswordToggle(false);
 					});
 				  
@@ -552,6 +559,14 @@
 					
                     function CheckConfig(save,message,title)
 					{
+                        var sipPort = document.getElementById('SIP_LOCAL_PORT');
+                        if (!sipPort.checkValidity()) {
+                          if ($('#PLUGIN_USE').val() === 'on') {
+                            sipPort.reportValidity();
+                            return false;
+                          }
+                          sipPort.value = sipPort.defaultValue;
+                        }
 						clearMqttHostValidation();
 
 						if (!externalMqttValidationRequired()) {
@@ -782,7 +797,7 @@
 					  if (t2sInstalled === '1') t2sInstalled = 'true';
 					  if (t2sInstalled === '0') t2sInstalled = 'false';
 
-					  updateMqttUi();
+					  updateConnectionUi();
                       updatePocketTtsStatusVisibility();
 
 					  if (DEBUG) {

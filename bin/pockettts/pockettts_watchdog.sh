@@ -95,7 +95,7 @@ check_once() {
     # Use 'start' rather than an unconditional restart. The server controller
     # deliberately leaves a model that is still loading (<90s) alone and only
     # replaces a genuinely stuck process. This avoids restart loops after boot.
-    "$SERVER_CTL" start >/dev/null 2>&1 || true
+    "$SERVER_CTL" start >> "$WATCHDOG_LOG" 2>&1 || log_error "Pocket-TTS start command failed"
 
     local waited=0
     while [ "$waited" -lt "$RECOVERY_WAIT" ]; do

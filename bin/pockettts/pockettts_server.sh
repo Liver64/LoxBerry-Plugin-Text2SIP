@@ -16,7 +16,7 @@ REQUESTFILE="$RUNDIR/server.requested"
 STARTFILE="$RUNDIR/server.started"
 SERVER_LOG="$RUNDIR/server.log"
 HOST="127.0.0.1"
-PORT="8765"
+PORT="18765"
 URL="http://$HOST:$PORT"
 DEFAULT_MODEL="german"
 
@@ -156,15 +156,24 @@ start_server() {
         fi
     fi
 
-    rm -f "$PIDFILE" "$MODELFILE" "$STARTFILE" "$SERVER_LOG"
+    rm -f "$PIDFILE" "$MODELFILE" "$STARTFILE"
+    # Keep the previous startup error across watchdog retries (RAM only).
+    if [ -f "$SERVER_LOG" ] && [ "$(wc -c < "$SERVER_LOG")" -gt 102400 ]; then
+        mv -f "$SERVER_LOG" "$SERVER_LOG.previous"
+    fi
+    if ! touch "$SERVER_LOG"; then
+        echo "Cannot write Pocket-TTS server log: $SERVER_LOG" >&2
+        return 5
+    fi
+    printf '\n%s Starting Pocket-TTS (%s)\n' "$(date '+%F %T')" "$desired" >> "$SERVER_LOG"
 
     if [ ! -x "$CLI" ]; then
-        echo "Pocket-TTS CLI missing: $CLI" >&2
+        echo "Pocket-TTS CLI missing: $CLI" | tee -a "$SERVER_LOG" >&2
         return 2
     fi
     marker="$(model_marker "$desired" 2>/dev/null || true)"
     if [ -z "$marker" ] || [ ! -f "$marker" ]; then
-        echo "Pocket-TTS model is not prepared: $desired" >&2
+        echo "Pocket-TTS model is not prepared: $desired" | tee -a "$SERVER_LOG" >&2
         return 3
     fi
 
@@ -173,7 +182,7 @@ start_server() {
         --port "$PORT" \
         --language "$desired" \
         --quantize \
-        >"$SERVER_LOG" 2>&1 </dev/null &
+        >>"$SERVER_LOG" 2>&1 </dev/null 9>&- &
     PID=$!
     printf '%s\n' "$PID" > "$PIDFILE"
     printf '%s\n' "$desired" > "$MODELFILE"
@@ -188,6 +197,22 @@ start_server() {
     fi
     return 0
 }
+
+# Serialize changes requested by the installer, WebUI and watchdog. Keep the
+# lock file in place; deleting it could let two callers lock different inodes.
+# Health/status checks remain available while a start/stop is in progress.
+case "${1:-status}" in
+    start|ensure|stop|restart)
+        if ! exec 9>"$RUNDIR/server.lock"; then
+            echo "Cannot open Pocket-TTS server lock: $RUNDIR/server.lock" >&2
+            exit 5
+        fi
+        if ! flock -w 30 9; then
+            echo "Timed out waiting for Pocket-TTS server control lock" >&2
+            exit 5
+        fi
+        ;;
+esac
 
 case "${1:-status}" in
     start|ensure)
