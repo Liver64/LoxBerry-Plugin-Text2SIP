@@ -4,6 +4,7 @@ use warnings;
 use IPC::Open3;
 use IO::Select;
 use Symbol 'gensym';
+use POSIX qw(WNOHANG _exit);
 use Getopt::Long;
 use Time::HiRes qw(time sleep);
 
@@ -108,10 +109,18 @@ my $disc_wav     = 0;
 my $hangup_sent  = 0;
 my @dtmf_digits  = ();
 my $done         = 0;
+my %read_buffer;
+my @result_queue;
+my $result_pid;
 my $start        = time;
 my $deadline     = $start + $total_cap + 5;
 
-sub send_cmd { my $c = shift; print $wtr "$c\n"; logline("-> $c"); }
+sub send_cmd {
+    my $c = shift;
+    local $SIG{PIPE} = 'IGNORE';
+    print $wtr "$c\n";
+    logline("-> $c");
+}
 
 sub place_call {
     return if $call_placed;
@@ -147,7 +156,30 @@ sub fire_result {
     logline("Result-URL: $masked");
 }
 
-while (!$done) {
+# Process one HTTP callback at a time so Loxone receives results in order.
+sub dispatch_result {
+    return if $result_pid || !@result_queue;
+    my $digit = shift @result_queue;
+    my $child = fork();
+    if (!defined $child) {
+        logline("Result-URL: fork fehlgeschlagen: $!");
+        return;
+    }
+    if ($child == 0) {
+        close $wtr;
+        close $rdr;
+        close $err;
+        fire_result($digit);
+        _exit(0);
+    }
+    $result_pid = $child;
+}
+
+while (!$done || $sel->count) {
+    if ($result_pid && waitpid($result_pid, WNOHANG) == $result_pid) {
+        undef $result_pid;
+    }
+    dispatch_result();
     if (!$hangup_sent && time > $deadline) { logline("Deadline -> auflegen"); hangup(); }
 
     # Antwort-Timeout: keine Rufannahme (CONFIRMED) innerhalb der Waehlzeit -> aufgeben
@@ -172,55 +204,80 @@ while (!$done) {
         hangup();
     }
 
+    sleep 0.2 unless $sel->count;
     foreach my $fh ($sel->can_read(0.2)) {
-        my $line = <$fh>;
-        if (!defined $line) { $sel->remove($fh); next; }
-        chomp $line;
-        print $LOG "$line\n" if $LOG && $o{debug};
-
-        if (!$registered && $line =~ /registration success, status=200/) {
-            $registered = 1; logline("Registrierung 200 OK"); place_call();
+        my $fd = fileno($fh);
+        my $count = sysread($fh, my $chunk, 16384);
+        next if !defined $count && $!{EINTR};
+        if (!$count) {
+            my $remaining = delete $read_buffer{$fd};
+            handle_line($remaining) if defined $remaining && length $remaining;
+            $sel->remove($fh);
+            next;
         }
-        if ($line =~ /Add(?:ed)? port (\d+) \(sip:/) {
-            $call_port = $1; logline("Call-Port aktualisiert: #$call_port");
-        }
-        if ($line =~ /Player created, id=\d+, slot=(\d+)/) { $wav_port = $1; }
-        if (!$confirmed && $line =~ /state changed to CONFIRMED/) {
-            $confirmed = 1; $confirmed_t = time; logline("CONFIRMED");
-        }
-        # Diagnose: jede echte DTMF-bezogene Zeile roh mitschreiben (nicht das Startmenue)
-        if ($line =~ /dtmf/i && $line !~ /Send RFC 2833 DTMF|Send DTMF with INFO/) {
-            logline("RAW-DTMF: $line");
-        }
-        # Echter DTMF-Empfang: RFC2833/INFO melden pjsua als "Incoming DTMF on call N: X".
-        # Verhalten 1:1 aus altem sipcmd-$check_result portiert:
-        #   - bei JEDER Ziffer: RESULT_VI + Ziffer feuern
-        #   - Ziffer == Bestaetigungsziffer -> auflegen
-        if ($line =~ /Incoming DTMF on call \d+:\s*([0-9A-D\*\#])/i) {
-            my $digit = $1;
-            push @dtmf_digits, $digit;
-            logline("DTMF empfangen: $digit");
-            fire_result($digit);
-            if ($o{confirm_digit} ne '' && $o{confirm_digit} ne '-' && $digit eq $o{confirm_digit}) {
-                logline("Bestaetigungsziffer '$digit' erkannt -> auflegen");
-                hangup();
-            }
-        }
-        if ($line =~ /Call \d+ is DISCONNECTED/ || $line =~ /state changed to DISCONNECTED/) {
-            logline("DISCONNECTED"); hangup();
+        $read_buffer{$fd} .= $chunk;
+        while ($read_buffer{$fd} =~ s/\A([^\n]*)\n//) {
+            handle_line($1);
         }
     }
 
-    if (waitpid($pid, 1) == $pid) { $done = 1; }  # WNOHANG (POSIX 1)
+    $done = 1 if !$done && waitpid($pid, WNOHANG) == $pid;
+}
+
+sub handle_line {
+    my ($line) = @_;
+    $line =~ s/\r\z//;
+    print $LOG "$line\n" if $LOG && $o{debug};
+
+    if (!$registered && $line =~ /registration success, status=200/) {
+        $registered = 1; logline("Registrierung 200 OK"); place_call();
+    }
+    if ($line =~ /Add(?:ed)? port (\d+) \(sip:/) {
+        $call_port = $1; logline("Call-Port aktualisiert: #$call_port");
+    }
+    if ($line =~ /Player created, id=\d+, slot=(\d+)/) { $wav_port = $1; }
+    if (!$confirmed && $line =~ /state changed to CONFIRMED/) {
+        $confirmed = 1; $confirmed_t = time; logline("CONFIRMED");
+    }
+    # Diagnose: jede echte DTMF-bezogene Zeile roh mitschreiben (nicht das Startmenue)
+    if ($line =~ /dtmf/i && $line !~ /Send RFC 2833 DTMF|Send DTMF with INFO/) {
+        logline("RAW-DTMF: $line");
+    }
+    # Echter DTMF-Empfang: RFC2833/INFO melden pjsua als "Incoming DTMF on call N: X".
+    # Verhalten 1:1 aus altem sipcmd-$check_result portiert:
+    #   - bei JEDER Ziffer: RESULT_VI + Ziffer feuern
+    #   - Ziffer == Bestaetigungsziffer -> auflegen
+    if ($line =~ /Incoming DTMF on call \d+:\s*([0-9A-D\*\#])/i) {
+        my $digit = $1;
+        push @dtmf_digits, $digit;
+        logline("DTMF empfangen: $digit");
+        if ($o{result_url} ne '') {
+            push @result_queue, $digit;
+            dispatch_result();
+        }
+        if ($o{confirm_digit} ne '' && $o{confirm_digit} ne '-' && $digit eq $o{confirm_digit}) {
+            logline("Bestaetigungsziffer '$digit' erkannt -> auflegen");
+            hangup();
+        }
+    }
+    if ($line =~ /Call \d+ is DISCONNECTED/ || $line =~ /state changed to DISCONNECTED/) {
+        logline("DISCONNECTED"); hangup();
+    }
+}
+
+# Preserve the final reset, after any callbacks for received digits.
+push @result_queue, '0' if $o{result_url} ne '';
+while ($result_pid || @result_queue) {
+    dispatch_result();
+    if ($result_pid) {
+        my $reaped;
+        do { $reaped = waitpid($result_pid, 0); }
+            while $reaped == -1 && $!{EINTR};
+        undef $result_pid;
+    }
 }
 
 eval { close $wtr; };
-1 while waitpid(-1, 1) > 0;
-
-# Alt-Verhalten (sipcmd "Exiting."-Zweig): beim Beenden RESULT_VI + "0" feuern
-if ($o{result_url} ne '') {
-    fire_result('0');
-}
 
 logline(scalar(@dtmf_digits) . " DTMF-Ziffern empfangen: " . join('', @dtmf_digits));
 logline("Fertig.");

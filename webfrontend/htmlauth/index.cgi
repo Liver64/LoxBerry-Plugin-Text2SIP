@@ -710,73 +710,44 @@ if ($do eq "makecall")
     my $had_placeholder = ($P2W_Text =~ /##/) ? 1 : 0;
 
     # ---------------------------------------------------------
-    # MSINFO + &tts-Handling
-    # Logik gemäß Doku + Fallback:
-    # - Wenn keine MSINFO-URL → &tts ersetzt ## (falls vorhanden)
-    # - Wenn MSINFO = "tts"   → &tts ersetzt ##
-    # - Wenn MSINFO-URL, aber kein Wert → &tts ersetzt ## oder unknown
-    # ---------------------------------------------------------
-    if (defined $SIPCMD_MSINFO && $SIPCMD_MSINFO ne '') {
-
-        if ($SIPCMD_MSINFO eq 'tts') {
-
-            # Spezieller Modus: immer &tts für ##
-            if ($P2W_Text =~ /##/) {
-                if ($tts_param ne '') {
-                    $P2W_Text =~ s/##/$tts_param/g;
-                } else {
-                    $P2W_Text =~ s/##/$unknown/g;
-                }
-            }
-
-        } else {
-            # Normale Miniserver-URL. Wget wird ohne Shell gestartet, damit
-            # Zugangsdaten weder durch Shell-Quoting noch durch wget -a im Log
-            # landen. Den value-Parameter parsen wir direkt in Perl.
-            my $ms_raw = '';
-            my $wget_status = 1;
-            if (open my $wh, '-|', $wgetbin,
-                    '--retry-connrefused', '--tries=2', '--waitretry=1',
-                    '--timeout=1', '--passive-ftp', '-nH', '-qO-',
-                    $SIPCMD_MSINFO) {
-                local $/;
-                $ms_raw = <$wh> // '';
-                close $wh;
-                $wget_status = $?;
-            }
-            my ($msinfo) = $ms_raw =~ /\bvalue=["']([^"']*)["']/i;
-            $msinfo = '' unless defined $msinfo;
-            $msinfo = as_chars($msinfo);
-
-            if ($wget_status != 0 || $msinfo eq '') {
-                my $safe_msinfo_url = mask_secrets($SIPCMD_MSINFO);
-                my $text = as_bytes($phraseplugin->param('ERROR0006')." ".$safe_msinfo_url);
-                if (open my $elf, '>>:raw', "$lbplogdir/$logfile") {
-                    print {$elf} $text . "\n";
-                    close $elf;
-                }
-
-                # Fallback: &tts oder unknown auf "##"
-                if ($P2W_Text =~ /##/) {
-                    if ($tts_param ne '') {
-                        $P2W_Text =~ s/##/$tts_param/g;
-                    } else {
-                        $P2W_Text =~ s/##/$unknown/g;
-                    }
-                }
-            } else {
-                # Erfolgreich vom Miniserver gelesen -> MS-Wert ersetzt ##
-                if ($P2W_Text =~ /##/) {
-                    $P2W_Text =~ s/##/$msinfo/g;
-                }
-            }
+    # Übergebener Alarmtext hat Vorrang vor der Miniserver-Abfrage.
+    if ($tts_param ne '') {
+        $P2W_Text =~ s/##/$tts_param/g;
+    } elsif (($SIPCMD_MSINFO // '') eq 'tts') {
+        $P2W_Text =~ s/##/$unknown/g;
+    } elsif (($SIPCMD_MSINFO // '') ne '') {
+        # Normale Miniserver-URL. Wget wird ohne Shell gestartet, damit
+        # Zugangsdaten weder durch Shell-Quoting noch durch wget -a im Log
+        # landen. Den value-Parameter parsen wir direkt in Perl.
+        my $ms_raw = '';
+        my $wget_status = 1;
+        if (open my $wh, '-|', $wgetbin,
+                '--retry-connrefused', '--tries=2', '--waitretry=1',
+                '--timeout=1', '--passive-ftp', '-nH', '-qO-',
+                $SIPCMD_MSINFO) {
+            local $/;
+            $ms_raw = <$wh> // '';
+            close $wh;
+            $wget_status = $?;
         }
+        my ($msinfo) = $ms_raw =~ /\bvalue=["']([^"']*)["']/i;
+        $msinfo = '' unless defined $msinfo;
+        $msinfo = as_chars($msinfo);
 
-    } else {
+        if ($wget_status != 0 || $msinfo eq '') {
+            my $safe_msinfo_url = mask_secrets($SIPCMD_MSINFO);
+            my $text = as_bytes($phraseplugin->param('ERROR0006')." ".$safe_msinfo_url);
+            if (open my $elf, '>>:raw', "$lbplogdir/$logfile") {
+                print {$elf} $text . "\n";
+                close $elf;
+            }
 
-        # Keine MSINFO-URL gesetzt → &tts darf direkt ## ersetzen
-        if ($tts_param ne '' && $P2W_Text =~ /##/) {
-            $P2W_Text =~ s/##/$tts_param/g;
+            $P2W_Text =~ s/##/$unknown/g;
+        } else {
+            # Erfolgreich vom Miniserver gelesen -> MS-Wert ersetzt ##
+            if ($P2W_Text =~ /##/) {
+                $P2W_Text =~ s/##/$msinfo/g;
+            }
         }
     }
 
