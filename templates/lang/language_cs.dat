@@ -118,3 +118,7 @@ TXT_POCKETTTS_SERVER_RESTARTING="Server se restartuje …"
 TXT_POCKETTTS_SERVER_RESTART_FAILED="Restart se nezdařil"
 TXT_POCKETTTS_SERVER_CHECKING="Kontrola stavu …"
 TXT_EMPTY_LOG_DIALOG_AUTHENTICATE="Ověření se nezdařilo."
+
+TXT_SIP_LOCAL_PORT="Local SIP Port"
+TXT_SIP_LOCAL_PORT_HELP="Default: 5060. Use e.g. 5062 for port conflicts. Applies to all calls; the SIP server port stays unchanged."
+TXT_SIP_LOCAL_PORT_INVALID="Local SIP port must be a whole number between 1 and 65535."

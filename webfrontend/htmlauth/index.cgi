@@ -68,6 +68,7 @@ our ($pluginconfigdir,$pluginconfigfile,@language_strings,$languagefile,$languag
 our ($namef,$value,%query);
 our ($DEBUG_USE,$PLUGIN_USE,$MQTT_MODE,$MQTT_HOST,$MQTT_PORT,$MQTT_USERNAME,$MQTT_PASSWORD);
 our ($logfile,$log);
+our $SIP_LOCAL_PORT = 5060;
 our $HOST_IP        = LoxBerry::System::get_localip();
 our $wgetbin;
 our $POPUP   = '';
@@ -130,7 +131,7 @@ our $pockettts_cli     = "$pockettts_runtime/venv/bin/pocket-tts";
 our $pockettts_helper     = "$pockettts_base/pockettts_language.sh";
 our $pockettts_server_ctl = "$pockettts_base/pockettts_server.sh";
 our $pockettts_watchdog_ctl = "$pockettts_base/pockettts_watchdog.sh";
-our $pockettts_server_url = "http://127.0.0.1:8765";
+our $pockettts_server_url = "http://127.0.0.1:18765";
 our $pockettts_watchdog_status_file = "/run/shm/text2sip-pockettts/watchdog.status";
 our $pockettts_watchdog_pid_file = "/run/shm/text2sip-pockettts/watchdog.pid";
 our $pockettts_server_model_file = "/run/shm/text2sip-pockettts/server.model";
@@ -138,6 +139,12 @@ our $pockettts_server_model_file = "/run/shm/text2sip-pockettts/server.model";
 # Kodier-Helfer. Config::Simple, Backticks und die Kommandozeile arbeiten mit
 # UTF-8-Bytes; CGI (-utf8) und die Sprachdateien liefern Zeichen. as_chars()
 # wandelt beim Hereinkommen, as_bytes() beim Hinausgehen. Beide sind idempotent.
+sub valid_sip_local_port {
+    my ($port) = @_;
+    return defined $port && $port =~ /\A[0-9]{1,5}\z/ && $port >= 1 && $port <= 65535
+        ? int($port) : 5060;
+}
+
 sub as_chars {
     my $v = shift;
     return '' unless defined $v;
@@ -884,6 +891,7 @@ if ($do eq "makecall")
         '/usr/bin/perl', shell_quote($driver),
         '--bin='           . shell_quote($pjsua_bin),
         '--bound='         . shell_quote($HOST_IP),
+        '--local_port='    . int(valid_sip_local_port(eval { $plugin_cfg->param('default.SIP_LOCAL_PORT') })),
         '--proxy='         . shell_quote($SIPCMD_SIP_PROXY),
         '--user='          . shell_quote($SIPCMD_CALLING_USER_NUMBER),
         '--password='      . shell_quote($SIPCMD_CALLING_USER_PASSWORD),
@@ -1172,6 +1180,12 @@ elsif ($do eq "config_import")
         exit;
     }
 
+    if (exists $imported{SIP_LOCAL_PORT} &&
+        ($imported{SIP_LOCAL_PORT} !~ /\A[0-9]{1,5}\z/ || $imported{SIP_LOCAL_PORT} < 1 || $imported{SIP_LOCAL_PORT} > 65535)) {
+        print JSON::encode_json({ ok => 0, msg => $phraseplugin->param('TXT_SIP_LOCAL_PORT_INVALID') });
+        exit;
+    }
+
     my %before  = map { $_ => 1 } keys %{ $target->vars() || {} };
     my $applied = 0;
     foreach my $k (sort keys %imported) {
@@ -1197,6 +1211,12 @@ elsif ($do eq "config_import")
 	#--------------- Save config -----------------
     if ( param('save_data') eq 1 )
     {
+      $SIP_LOCAL_PORT = param('SIP_LOCAL_PORT') // 5060;
+      unless ($SIP_LOCAL_PORT =~ /\A[0-9]{1,5}\z/ && $SIP_LOCAL_PORT >= 1 && $SIP_LOCAL_PORT <= 65535) {
+          print escapeHTML($phraseplugin->param('TXT_SIP_LOCAL_PORT_INVALID'));
+          exit;
+      }
+      $SIP_LOCAL_PORT = int($SIP_LOCAL_PORT);
       $plugin_cfg = new Config::Simple(syntax=>'ini');
       $PLUGIN_USE = param('PLUGIN_USE');
 		if ( $PLUGIN_USE ne "on" ) { $PLUGIN_USE = "off"; }
@@ -1323,6 +1343,7 @@ elsif ($do eq "config_import")
 	  
       $plugin_cfg->param('default.MQTT_MODE'     ,"$MQTT_MODE" );
       $plugin_cfg->param('default.MQTT_HOST'     ,as_bytes($MQTT_HOST) );
+      $plugin_cfg->param('default.SIP_LOCAL_PORT', $SIP_LOCAL_PORT);
       $plugin_cfg->param('default.MQTT_PORT'     ,"$MQTT_PORT" );
       $plugin_cfg->param('default.MQTT_USERNAME' ,as_bytes($MQTT_USERNAME) );
       $plugin_cfg->param('default.MQTT_PASSWORD' ,as_bytes($MQTT_PASSWORD) );
@@ -1414,6 +1435,7 @@ elsif ($do eq "config_import")
 	print $POPUP if $POPUP;
 	print $CONFIRM if $CONFIRM;
 	
+    $SIP_LOCAL_PORT = valid_sip_local_port(eval { $plugin_cfg->param('default.SIP_LOCAL_PORT') });
     our $vg_select                      = "";
     our $P2W_lang                       = "de";
     our $vg_id                          = 0;
@@ -1505,6 +1527,8 @@ elsif ($do eq "config_import")
           $MQTT_PORT_HTML     = escapeHTML($MQTT_PORT // '1883');
           $MQTT_USERNAME_HTML = escapeHTML($MQTT_USERNAME // '');
           $MQTT_PASSWORD_HTML = escapeHTML($MQTT_PASSWORD // '');
+
+      our $SIP_LOCAL_PORT_ROW_STYLE = lc($PLUGIN_USE // '') eq 'on' ? '' : 'display: none !important';
 
       # Parse the strings we want
       open(F,"$installfolder/templates/plugins/$psubfolder/settings.html") || die "Missing template plugins/$psubfolder/settings.html";

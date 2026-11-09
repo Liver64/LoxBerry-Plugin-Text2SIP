@@ -482,7 +482,7 @@ fi
 # German voice against a different model that happened to be resident before an
 # upgrade.
 if [ -x "$POCKET_SERVER_CTL" ] && [ -f "$POCKET_STATE/de.ready" ]; then
-    runuser -u loxberry -- "$POCKET_SERVER_CTL" ensure german >/dev/null 2>&1 || true
+    run_logged runuser -u loxberry -- "$POCKET_SERVER_CTL" ensure german || log_warning "Pocket-TTS server start failed; see output above"
     log_info "Waiting for resident German Pocket-TTS server ..."
     POCKET_SERVER_READY=0
     POCKET_WAIT=0
@@ -504,7 +504,7 @@ if [ -x "$POCKET_SERVER_CTL" ] && [ -f "$POCKET_STATE/de.ready" ]; then
             runuser -u loxberry -- /usr/bin/wget -q -T 120 -O /dev/null \
             --header='Content-Type: application/x-www-form-urlencoded' \
             --post-data='text=Test&voice_url=juergen' \
-            'http://127.0.0.1:8765/tts'; then
+            'http://127.0.0.1:18765/tts'; then
             log_ok "Resident Pocket-TTS voice 'juergen' is warm"
         else
             log_warning "Pocket-TTS voice warm-up failed; normal server/CLI fallback remains available"
@@ -518,6 +518,12 @@ if [ -x "$POCKET_SERVER_CTL" ] && [ -f "$POCKET_STATE/de.ready" ]; then
         fi
     else
         log_warning "Resident Pocket-TTS server did not become ready within 45 seconds; CLI fallback remains available"
+        if [ -r /run/shm/text2sip-pockettts/server.log ]; then
+            log_info "Last Pocket-TTS server messages:"
+            tail -n 40 /run/shm/text2sip-pockettts/server.log | tee -a "$logfile"
+        else
+            log_warning "Pocket-TTS server log missing: /run/shm/text2sip-pockettts/server.log"
+        fi
     fi
 fi
 

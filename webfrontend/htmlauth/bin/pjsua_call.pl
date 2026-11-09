@@ -17,17 +17,20 @@ use Time::HiRes qw(time sleep);
 
 my %o = (
     bin=>'', bound=>'', proxy=>'', user=>'', authuser=>'', password=>'',
-    display=>'', called=>'', wav=>'',
+    display=>'', called=>'', wav=>'', local_port=>5060,
     pause_before=>0, pause_after=>4000, timeout=>60,
     confirm_digit=>'-', result_url=>'', log=>'', debug=>0,
 );
 GetOptions(\%o,
     'bin=s','bound=s','proxy=s','user=s','authuser=s','password=s',
-    'display=s','called=s','wav=s',
+    'display=s','called=s','wav=s','local_port=i',
     'pause_before=i','pause_after=i','timeout=i',
     'confirm_digit=s','result_url=s','log=s','debug=i',
 ) or die "bad args\n";
 $o{authuser} = $o{user} if !defined $o{authuser} || $o{authuser} eq '';
+
+die "Local SIP port must be between 1 and 65535\n"
+    unless $o{local_port} >= 1 && $o{local_port} <= 65535;
 
 # --- Logging ---
 my $LOG;
@@ -73,6 +76,7 @@ my @cmd = (
     $o{bin},
     '--null-audio', '--no-tones',
     "--bound-addr=$o{bound}",
+    "--local-port=$o{local_port}",
     '--registrar', "sip:$o{proxy}",
     '--id', $iduri,
     '--realm', '*',
@@ -177,8 +181,8 @@ while (!$done) {
         if (!$registered && $line =~ /registration success, status=200/) {
             $registered = 1; logline("Registrierung 200 OK"); place_call();
         }
-        if ($call_port == 0 && $line =~ /Add(?:ed)? port (\d+) \(sip:/) {
-            $call_port = $1; logline("Call-Port erkannt: #$call_port");
+        if ($line =~ /Add(?:ed)? port (\d+) \(sip:/) {
+            $call_port = $1; logline("Call-Port aktualisiert: #$call_port");
         }
         if ($line =~ /Player created, id=\d+, slot=(\d+)/) { $wav_port = $1; }
         if (!$confirmed && $line =~ /state changed to CONFIRMED/) {

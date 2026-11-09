@@ -426,3 +426,5 @@ Weitere Informationen befinden sich in der Datei:
 * [Releases](https://github.com/Woersty/LoxBerry-Plugin-Text2SIP/releases)
 * [Issues](https://github.com/Woersty/LoxBerry-Plugin-Text2SIP/issues)
 * [LoxBerry Wiki – Text2SIP](https://www.loxwiki.eu/display/LOXBERRY/Text2SIP)
+
+Local SIP port: In the plugin settings, set **Local SIP Port** to an unused port (for example **5062**) if another VoIP plugin occupies 5060. The default is 5060. This setting applies to all calls, is saved in the plugin configuration and does not change the remote SIP server port.
